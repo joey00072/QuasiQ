@@ -10,22 +10,31 @@ def debug_print(*args, **kwargs):
 
 # identity matrix
 I = np.eye(2)
+
 # pauli-x gate (not gate): σₓ = [[0, 1], [1, 0]]
 X = np.array([[0, 1], [1, 0]], dtype=dtype)
+
 # pauli-y gate: σy = [[0, -1j], [1j, 0]]
 Y = np.array([[0, -1j], [1j, 0]], dtype=dtype)
+
 # pauli-z gate: σz = [[1, 0], [0, -1]]
 Z = np.array([[1, 0], [0, -1]], dtype=dtype)
+
 # hadamard gate: H = (1/√2) * [[1, 1], [1, -1]]
 H = np.array([[1, 1], [1, -1]], dtype=dtype) / np.sqrt(2)
-# phase gate (S gate): S = [[1, 0], [0, i]]
+
+# phase gate (s gate): S = [[1, 0], [0, i]]
 S = np.array([[1, 0], [0, 1j]], dtype=dtype)
-# pi/8 gate (T gate): T = [[1, 0], [0, exp(i*pi/4)]]
+
+# pi/8 gate (t gate): T = [[1, 0], [0, exp(i*pi/4)]]
 T = np.array([[1, 0], [0, np.exp(1j * np.pi / 4)]], dtype=dtype)
-# SWAP gate
+
+# swap gate
 SWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=dtype)
-# √NOT gate (square root of X)
+
+# √not gate (square root of x)
 SQRTX = np.array([[1+1j, 1-1j], [1-1j, 1+1j]], dtype=dtype) / 2
+
 # rotation gates
 def RX(theta):
     return np.array([[np.cos(theta/2), -1j*np.sin(theta/2)],
@@ -39,7 +48,6 @@ def RZ(theta):
     return np.array([[np.exp(-1j*theta/2), 0],
                      [0, np.exp(1j*theta/2)]], dtype=dtype)
 
-# densitymatrix class for multi-qubit systems
 class DensityMatrix:
     def __init__(self, n_qubits):
         self.n_qubits = n_qubits
@@ -49,15 +57,19 @@ class DensityMatrix:
         self.state = pure_state
 
     def apply_gate(self, gate, target_qubit):
-        # the gate matrix is expanded to act on the full system, then applied as: 
-        # ρ' = U * ρ * U† where U† is the hermitian conjugate (complex conjugate transpose) of U
+        """
+        the gate matrix is expanded to act on the full system, then applied as: 
+        ρ' = U * ρ * U† where U† is the hermitian conjugate (complex conjugate transpose) of U
+        """
         full_gate = self._expand_gate(gate, target_qubit)
         self.state = full_gate @ self.state @ full_gate.conj().T
 
     def apply_controlled_gate(self, control_qubit, target_qubit, gate):
-        # applies a controlled gate (e.g., cnot) between two qubits
-        # the controlled gate is expanded to act on the full system, then applied as:
-        # ρ' = C_U * ρ * C_U† where C_U is the controlled gate operation
+        """
+        applies a controlled gate (e.g., cnot) between two qubits 
+        the controlled gate is expanded to act on the full system, then applied as: 
+        ρ' = C_U * ρ * C_U† where C_U is the controlled gate operation
+        """
         full_controlled_gate = self._expand_controlled_gate(control_qubit, target_qubit, gate)
         self.state = full_controlled_gate @ self.state @ full_controlled_gate.conj().T  # complex conjugate transpose is the dagger †
 
@@ -119,37 +131,52 @@ class DensityMatrix:
         after measurement, the state collapses to:
         ρ' = (PᵢρPᵢ) / Tr(PᵢρPᵢ), where Pᵢ is the projector for the measured outcome.
         """
-        # calculate probabilities for each outcome
+        assert 0 <= qubit < self.n_qubits, f"Invalid qubit index {qubit}. Must be between 0 and {self.n_qubits - 1}."
+
         dim = 2**self.n_qubits
+        P_0 = np.zeros_like(self.state, dtype=dtype)
+        P_1 = np.zeros_like(self.state, dtype=dtype)
+
+        # calculate probabilities for measuring |0⟩ and |1⟩ on the qubit
         probabilities = np.zeros(2, dtype=dtype)
-        
+
         for i in range(dim):
             if (i >> (self.n_qubits - 1 - qubit)) & 1:
                 probabilities[1] += self.state[i, i].real
             else:
                 probabilities[0] += self.state[i, i].real
 
-        # normalize probabilities and ensure they are real numbers
+        # normalize the probabilities and ensure they are real numbers
         probabilities = np.real(probabilities)
-        probabilities /= np.sum(probabilities)
-        
-        # measurement based on the computed probabilities
+        probabilities /= np.sum(probabilities)  # ensure normalization
+
+        # assert that probabilities sum to 1
+        assert np.isclose(np.sum(probabilities), 1.0), f"probabilities do not sum to 1: {probabilities}"
+
+        # perform the measurement based on the computed probabilities
         result = int(np.random.choice([0, 1], p=probabilities))
         debug_print(f"measured qubit {qubit}: {result}")
 
-        # collapse the state based on the measurement result
-        new_state = np.zeros_like(self.state)
+        # construct projectors p_0 (for |0⟩) and p_1 (for |1⟩)
         for i in range(dim):
-            if ((i >> (self.n_qubits - 1 - qubit)) & 1) == result:
-                new_state[i, i] = self.state[i, i]
+            if (i >> (self.n_qubits - 1 - qubit)) & 1:
+                P_1[i, i] = 1  # projector for |1⟩
+            else:
+                P_0[i, i] = 1  # projector for |0⟩
 
-        # normalize 
-        if np.sum(new_state) > 0:
-            self.state = new_state / np.sum(new_state)  
+        # now we apply the projector to the density matrix which will give us the collapsed state
+        # ie. new state after measurement
+        if result == 0:
+            new_state = P_0 @ self.state @ P_0  # p_0 projects onto |0⟩
         else:
-            self.state = new_state
-        
+            new_state = P_1 @ self.state @ P_1  # p_1 projects onto |1⟩
+
+        normalization_factor = np.trace(new_state)
+        assert normalization_factor > 0, "normalization factor must be positive."
+        self.state = new_state / normalization_factor  # normalize the collapsed state
+
         return result
+
 
     def __repr__(self):
         return f"DensityMatrix(n_qubits={self.n_qubits})\nState:\n{self.state}"
