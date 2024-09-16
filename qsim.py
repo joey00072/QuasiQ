@@ -1,5 +1,9 @@
 import numpy as np
 
+from dataclasses import dataclass
+
+from typing import Optional
+
 DEBUG = False
 
 dtype = np.complex128  # double precision is needed
@@ -8,45 +12,7 @@ def debug_print(*args, **kwargs):
     if DEBUG:
         print("[DEBUG]", *args, **kwargs)
 
-# identity matrix
-I = np.eye(2)
-
-# pauli-x gate (not gate): σₓ = [[0, 1], [1, 0]]
-X = np.array([[0, 1], [1, 0]], dtype=dtype)
-
-# pauli-y gate: σy = [[0, -1j], [1j, 0]]
-Y = np.array([[0, -1j], [1j, 0]], dtype=dtype)
-
-# pauli-z gate: σz = [[1, 0], [0, -1]]
-Z = np.array([[1, 0], [0, -1]], dtype=dtype)
-
-# hadamard gate: H = (1/√2) * [[1, 1], [1, -1]]
-H = np.array([[1, 1], [1, -1]], dtype=dtype) / np.sqrt(2)
-
-# phase gate (s gate): S = [[1, 0], [0, i]]
-S = np.array([[1, 0], [0, 1j]], dtype=dtype)
-
-# pi/8 gate (t gate): T = [[1, 0], [0, exp(i*pi/4)]]
-T = np.array([[1, 0], [0, np.exp(1j * np.pi / 4)]], dtype=dtype)
-
-# swap gate
-SWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=dtype)
-
-# √not gate (square root of x)
-SQRTX = np.array([[1+1j, 1-1j], [1-1j, 1+1j]], dtype=dtype) / 2
-
-# rotation gates
-def RX(theta):
-    return np.array([[np.cos(theta/2), -1j*np.sin(theta/2)],
-                     [-1j*np.sin(theta/2), np.cos(theta/2)]], dtype=dtype)
-
-def RY(theta):
-    return np.array([[np.cos(theta/2), -np.sin(theta/2)],
-                     [np.sin(theta/2), np.cos(theta/2)]], dtype=dtype)
-
-def RZ(theta):
-    return np.array([[np.exp(-1j*theta/2), 0],
-                     [0, np.exp(1j*theta/2)]], dtype=dtype)
+I = np.eye(2, dtype=dtype)
 
 class DensityMatrix:
     def __init__(self, n_qubits):
@@ -180,9 +146,12 @@ class DensityMatrix:
 
     def __repr__(self):
         return f"DensityMatrix(n_qubits={self.n_qubits})\nState:\n{self.state}"
+    
 
 if __name__ == "__main__":
     print("all qubits should collapse to the same state, either 0s or 1s")
+
+    from gates import X,H
 
     shots = 5
     for i in range(shots):
