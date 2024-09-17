@@ -30,14 +30,18 @@ class DensityMatrix:
         full_gate = self._expand_gate(gate, target_qubit)
         self.state = full_gate @ self.state @ full_gate.conj().T
 
-    def apply_controlled_gate(self, control_qubit, target_qubit, gate):
+    def apply_controlled_gate(self, control_qubits, target_qubit, gate):
         """
         applies a controlled gate (e.g., cnot) between two qubits 
         the controlled gate is expanded to act on the full system, then applied as: 
         ρ' = C_U * ρ * C_U† where C_U is the controlled gate operation
         """
-        full_controlled_gate = self._expand_controlled_gate(control_qubit, target_qubit, gate)
-        self.state = full_controlled_gate @ self.state @ full_controlled_gate.conj().T  # complex conjugate transpose is the dagger †
+        if isinstance(control_qubits, int):
+            control_qubits = [control_qubits]  # make it a list if a single control qubit is passed
+
+        full_controlled_gate = self._expand_controlled_gate(control_qubits, target_qubit, gate)
+        self.state = full_controlled_gate @ self.state @ full_controlled_gate.conj().T
+
 
     def _expand_gate(self, gate, target_qubit):
         """
@@ -56,7 +60,7 @@ class DensityMatrix:
                 result = np.kron(result, I) 
         return result
 
-    def _expand_controlled_gate(self, control_qubit, target_qubit, gate):
+    def _expand_controlled_gate(self, control_qubits, target_qubit, gate):
         """
         expands a controlled gate to act on the entire multi-qubit system.
 
@@ -67,13 +71,15 @@ class DensityMatrix:
         C_U = |0⟩⟨0| ⊗ I + |1⟩⟨1| ⊗ U
         where |0⟩⟨0| and |1⟩⟨1| are projectors onto the control qubit states.
         """
-        dim = 2**self.n_qubits  # dimension of the density matrix
-        full_gate = np.eye(dim, dtype=dtype)  # start with an identity matrix of the system's full dimension
+        dim = 2**self.n_qubits
+        full_gate = np.eye(dim, dtype=dtype)
         
         for i in range(dim):
-            # check if the control qubit is in state |1>
-            if (i >> (self.n_qubits - 1 - control_qubit)) & 1:
-                # if control qubit is |1>, apply the gate to the target qubit
+            # Check if all control qubits are in state |1|
+            all_controls_active = all((i >> (self.n_qubits - 1 - cq)) & 1 for cq in control_qubits)
+
+            if all_controls_active:
+                # if all control qubits are |1|, apply the gate to the target qubit
                 i_flipped = i ^ (1 << (self.n_qubits - 1 - target_qubit))  # flip target qubit
                 full_gate[i, i] = gate[0, 0]
                 full_gate[i, i_flipped] = gate[0, 1]
@@ -81,6 +87,7 @@ class DensityMatrix:
                 full_gate[i_flipped, i_flipped] = gate[1, 1]
         
         return full_gate
+
 
     def measure(self, qubit):
         """
@@ -143,27 +150,24 @@ class DensityMatrix:
 
         return result
 
-
     def __repr__(self):
         return f"DensityMatrix(n_qubits={self.n_qubits})\nState:\n{self.state}"
     
-
 if __name__ == "__main__":
-    print("all qubits should collapse to the same state, either 0s or 1s")
+    shots = 10
 
-    from gates import X,H
-
-    shots = 5
     for i in range(shots):
         dm = DensityMatrix(3)
+        from gates import *
         
         dm.apply_gate(H, 0)  # apply hadamard to qubit 0: |0⟩ → (|0⟩ + |1⟩)/√2
+        dm.apply_gate(H, 1)
         
-        dm.apply_controlled_gate(0, 1, X)  # cnot with control 0, target 1
-        dm.apply_controlled_gate(1, 2, X)  # cnot with control 1, target 2
+        # dm.apply_controlled_gate(0, 1, X)  # cnot with control 0, target 1
+        # dm.apply_controlled_gate(1, 2, X)  # cnot with control 1, target 2
         
-        # the state after gates is the ghz state: (|000⟩ + |111⟩)/√2
-        
+        # cxx
+        dm.apply_controlled_gate([0, 1], 2, X)
         # print("state after gates:")
         # print(dm)
         

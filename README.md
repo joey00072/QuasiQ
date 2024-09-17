@@ -17,10 +17,12 @@ QuasiQ is a simple quantum computer sim
 - [x] Create DensityMatrix class for multi-qubit systems
 - [x] Implement qubit measurement
 - [x] Add example GHZ state creation and measurement
-- [ ] Implement additional quantum gates (Y, Z, S, T, etc.)
+- [x] Implement additional quantum gates (Y, Z, S, T, etc.)
 - [ ] Create quantum circuit class
-- [ ] impliment basic algorithms (ghz, teleportation, etc.)
 - [ ] Add visualization tools for quantum states
+- [ ] impliment basic algorithms (ghz, teleportation, etc.)
+- [ ] Noise simulation
+- [ ] QASM (OpenQASM) support
 - [ ] tests :?
 - [ ] Add error handling and input validation
 - [ ] Implement state vector representation alongside density matrices
