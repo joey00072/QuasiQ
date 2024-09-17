@@ -22,6 +22,7 @@ class DensityMatrix:
         pure_state[0, 0] = 1  # initialize the state to |000...0> (ground state)
         self.state = pure_state
 
+    # TODO: merge apply_gate and apply_controlled_gate
     def apply_gate(self, gate, target_qubit):
         """
         the gate matrix is expanded to act on the full system, then applied as: 
@@ -29,6 +30,10 @@ class DensityMatrix:
         """
         full_gate = self._expand_gate(gate, target_qubit)
         self.state = full_gate @ self.state @ full_gate.conj().T
+
+        debug_print(f"=========Single Gate=========")
+        debug_print(self.state)
+        debug_print(f"==================")
 
     def apply_controlled_gate(self, control_qubits, target_qubit, gate):
         """
@@ -42,6 +47,9 @@ class DensityMatrix:
         full_controlled_gate = self._expand_controlled_gate(control_qubits, target_qubit, gate)
         self.state = full_controlled_gate @ self.state @ full_controlled_gate.conj().T
 
+        debug_print(f"=========Controlled Gate=========")
+        debug_print(self.state)
+        debug_print(f"==================")
 
     def _expand_gate(self, gate, target_qubit):
         """
@@ -152,6 +160,7 @@ class DensityMatrix:
 
     def __repr__(self):
         return f"DensityMatrix(n_qubits={self.n_qubits})\nState:\n{self.state}"
+    
     
 if __name__ == "__main__":
     shots = 10
