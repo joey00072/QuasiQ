@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from gates import *
-from density_matrix import DensityMatrix
+from quasiq.gates import *
+from quasiq.density_matrix import DensityMatrix
 
 from dataclasses import dataclass
 from typing import List, Optional
