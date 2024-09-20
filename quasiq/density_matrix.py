@@ -2,6 +2,8 @@ import numpy as np
 
 from quasiq.utils import tensor_product, debug_print
 
+dtype = np.complex128
+
 I = np.eye(2, dtype=dtype)
 
 class DensityMatrix:
@@ -23,6 +25,8 @@ class DensityMatrix:
 
         debug_print(f"=========Single Gate=========")
         debug_print("\n",self.state/self.state.max(), 1/self.state.max())
+        debug_print("--------------------------------")
+        debug_print(self.state)
         debug_print(f"==================")
 
     def apply_controlled_gate(self, control_qubits, target_qubit, gate):
@@ -76,7 +80,7 @@ class DensityMatrix:
         I_full = np.eye(2**num_qubits, dtype=dtype)
 
         debug_print(f"expanded gate shapes: P_control={P_control.shape}, U={U.shape}, I_full={I_full.shape}")
-        
+
         # when there are no control qubits, P_control => I, so this reduces to U 
         C_U = P_control @ U + (I_full - P_control)
 
@@ -138,7 +142,7 @@ class DensityMatrix:
         self.state = new_state / normalization_factor
 
         debug_print(f"=========Measure=========")
-        debug_print("\n", self.state.real / self.state.max().real, 1 / self.state.max().real)
+        debug_print("\n", self.state)
         debug_print(f"==================")
 
         return result

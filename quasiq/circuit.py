@@ -5,6 +5,7 @@ import numpy as np
 
 from quasiq.gates import *
 from quasiq.density_matrix import DensityMatrix
+from quasiq.utils import debug_print
 
 from dataclasses import dataclass
 from typing import List, Optional
@@ -26,16 +27,19 @@ class Symbol:
 @dataclass
 class Circuit:
     num_qubits: int
-    num_cbits: int = 1
-    instructions: List[Instruction] | None = None
+    num_cbits: int = None
+    instructions: List[Instruction] = None
     density_matrix: DensityMatrix = None
 
     def __post_init__(self):
+        self.num_cbits = self.num_cbits or self.num_qubits 
         self.instructions = []
+        self.quantums_bits = [[] for _ in range(self.num_cbits)]
         self.classical_bits = [[] for _ in range(self.num_cbits)]
         self.density_matrix = DensityMatrix(self.num_qubits)
 
     def _reset(self):
+        self.quantums_bits = [[] for _ in range(self.num_qubits)]
         self.classical_bits = [[] for _ in range(self.num_cbits)]
         self.density_matrix = DensityMatrix(self.num_qubits)
 
@@ -168,7 +172,7 @@ class Circuit:
     def cz(self, control: int, target: int):
         self.add_instruction(
             Instruction(
-                name="Controlled-Z", symbol="CZ", qubits=[control, target], gate=CZ
+                name="Controlled-Z", symbol="CZ", qubits=[control, target], gate=Z
             )
         )
 
@@ -217,23 +221,60 @@ class Circuit:
         )
 
     def run(self):
+
+        lst = [0 for _ in range(self.num_qubits)]
         for instruction in self.instructions:
-            if instruction.gate is not None:
+            debug_print(f"Executing: {instruction.name}, qubits: {instruction.qubits}, params: {instruction.params}")
+            if instruction.name == "Measurement":
+                lst[instruction.qubits[0]] = 1
+
+        for idx, q in enumerate(lst):
+            if q != 1:
+                print(f"Measuring qubit {idx}")
+                self.measure(idx, 0)
+
+        debug_print("Starting circuit execution...")
+
+        for instruction in self.instructions:
+            if instruction.name == "Measurement":
+                if self.quantums_bits[instruction.qubits[0]] == []:
+                    output = self.density_matrix.measure(instruction.qubits[0])
+                    self.quantums_bits[instruction.qubits[0]].append(output)
+                    self.classical_bits[instruction.params[0]].append(output)
+                else:
+                    output = self.quantums_bits[instruction.qubits[0]][-1]
+                    self.classical_bits[instruction.params[0]].append(output)
+                debug_print(f"Qubit {instruction.qubits[0]} measured as {output}")
+
+            elif instruction.gate is not None:
+                debug_print(f"Applying gate: {instruction.name}, qubits: {instruction.qubits}, gate shape: {instruction.gate.shape}")
                 if len(instruction.qubits) == 1:
                     self.density_matrix.apply_gate(
                         instruction.gate, instruction.qubits[0]
                     )
                 else:
-                    self.density_matrix.apply_controlled_gate(
-                        control_qubits=instruction.qubits[:-1],
-                        target_qubit=instruction.qubits[-1],
-                        gate=instruction.gate,
-                    )
+                    control_qubits = instruction.qubits[:-1]
+                    target_qubit = instruction.qubits[-1]
+                    if any((len(self.quantums_bits[cidx])) for cidx in control_qubits):
+                        if len(control_qubits) == 1:
+                            if self.quantums_bits[control_qubits[0]][-1] == 1:
+                                self.density_matrix.apply_gate(instruction.gate, target_qubit)
+                        elif len(control_qubits) == 2:
+                            if self.quantums_bits[control_qubits[0]][-1] == 1 and self.quantums_bits[control_qubits[1]][-1] == 1:
+                                self.density_matrix.apply_gate(instruction.gate, target_qubit)
+                        elif len(control_qubits) == 3:
+                            if self.quantums_bits[control_qubits[0]][-1] == 1 and self.quantums_bits[control_qubits[1]][-1] == 1 and self.quantums_bits[control_qubits[2]][-1] == 1:
+                                self.density_matrix.apply_gate(instruction.gate, target_qubit)
+                        debug_print(f"Applying controlled gate based on measured qubits")
+                    else:
+                        debug_print("Applying Controlled Quantum Gate")
+                        self.density_matrix.apply_controlled_gate(
+                            control_qubits=control_qubits,
+                            target_qubit=target_qubit,
+                            gate=instruction.gate,
+                        )
                 
-                    
-            elif instruction.name == "Measurement":
-                output = self.density_matrix.measure(instruction.qubits[0])
-                self.classical_bits[instruction.params[0]].append(output)
+        debug_print("Circuit execution completed")
         return self.density_matrix, self.classical_bits
     
 
@@ -247,15 +288,13 @@ class Circuit:
 
     def execute(self, shots: int=1, visualize: bool = False):
         results = []
-        for qubit in range(self.num_qubits):
-            self.measure(qubit, 0)
-
         for _ in range(shots):
             self._reset()
             self.run()
-            results.append((self.classical_bits[0]))
-        # print(results)
+            results.append([self.quantums_bits[qubit][-1] for qubit in range(self.num_qubits)])
+            
         if visualize:
+            debug_print("Visualizing results...")
             d = {}
             for result in results:
                 s = "".join([str(i) for i in result])

@@ -19,6 +19,8 @@ QuasiQ is a simple quantum computer sim
 - [x] Add example GHZ state creation and measurement
 - [x] Implement additional quantum gates (Y, Z, S, T, etc.)
 - [x] Create quantum circuit class
+- [x] quantum teleportation example
+- [ ] superdense coding example
 - [ ] Add visualization tools for quantum states
 - [ ] impliment basic algorithms (ghz, teleportation, etc.)
 - [ ] Noise simulation
