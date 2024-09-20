@@ -6,7 +6,7 @@ import numpy as np
 from quasiq.gates import *
 from quasiq.density_matrix import DensityMatrix
 from quasiq.utils import debug_print
-
+import math
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -21,8 +21,27 @@ class Instruction:
 
 
 class Symbol:
+    BOX_TOP_LEFT = '┌─'
+    BOX_BOTTOM_LEFT = '└─'
+    BOX_TOP_RIGHT = '─┐'
+    BOX_BOTTOM_RIGHT = '─┘'
+    MULTI_REG_TOP_LEFT = '╭─'
+    MULTI_REG_BOTTOM_LEFT = '╰─'
+    MULTI_REG_TOP_RIGHT = '─╮'
+    MULTI_REG_BOTTOM_RIGHT = '─╯'
+    VERTICAL_LINE = '│'
+    HORIZONTAL_LINE = '─'
+    LEFT_T = '┤'
+    RIGHT_T = '├'
+    TOP_T = '┴'
+    BOTTOM_T = '┬'
+    BULLET = '●'
+    OPEN_BULLET = '○'
     BOX = '■'
     OPEN_BOX = '□'
+    DOUBLE_VERTICAL_LINE = '║'
+    DOUBLE_TOP = '╥'
+    PI = 'π'
     
 @dataclass
 class Circuit:
@@ -43,6 +62,9 @@ class Circuit:
         self.classical_bits = [[] for _ in range(self.num_cbits)]
         self.density_matrix = DensityMatrix(self.num_qubits)
 
+    def print_circuit(self):
+        print_circuit(self)
+
     def add_instruction(self, instruction: Instruction):
         self.instructions.append(instruction)
 
@@ -50,8 +72,8 @@ class Circuit:
         return str(self.instructions)
 
     def __repr__(self):
-        return f"Circuit(num_qubits={self.num_qubits}, num_cbits={self.num_cbits}, instructions={self.instructions})"
-
+        return PrintCircuit(self).print()
+    
     def h(self, qubit: int):
         self.add_instruction(
             Instruction(name="Hadamard", symbol="H", qubits=[qubit], gate=H)
@@ -307,6 +329,258 @@ class Circuit:
     
 
 
+class PrintCircuit:
+    def __init__(self, circuit: Circuit):
+        self.lines = [[] for _ in range(circuit.num_qubits * 3 + 4)]
+        self.top_padding = 3
+        self.left_margin = "    "
+        self.circuit = circuit
+
+        self.top_lines = self.lines[0:self.top_padding]
+        self.body_lines = self.lines[self.top_padding:]
+
+        self.m = 1
+
+    def add_left_padding(self):
+        for ln in self.top_lines:
+            ln.append(self.left_margin[1:])
+        for idx, ln in enumerate(self.body_lines):
+            ln.append(f"q_{idx // 3}:" if idx % 3 == 1 else self.left_margin)
+        return self.lines    
+
+
+    def add_space_padding(self: PrintCircuit):
+        for idx,ln in enumerate(self.top_lines):
+            ln.append(" ")
+
+        for idx, ln in enumerate(self.body_lines):
+            if idx % 3 == 1:
+                ln.append(Symbol.HORIZONTAL_LINE)
+            else:
+                ln.append(" ")
+
+
+    def add_barrier(self, instruction: Instruction, idx: int):
+        
+        for idx,ln in enumerate(self.top_lines):
+            ln.append(" ")
+        for idx,ln in enumerate(self.body_lines):
+            ln.append("|")
+
+    
+
+
+    def add_single_qubit_gate(self, instruction: Instruction, idx: int,single=True):
+
+        lines = [[] for _ in range(len(self.body_lines))]
+
+        target_qbits = [instruction.qubits[-1]] if single else instruction.qubits
+        # print(target_qbits)
+
+        for idx,ln in enumerate(lines):
+            qbit = idx//3
+            if qbit in target_qbits:
+                if idx % 3 == 0:
+                    ln.append(f"{Symbol.BOX_TOP_LEFT}")
+                elif idx % 3 == 1:
+                    ln.append(f"{Symbol.LEFT_T}")
+                elif idx % 3 == 2:
+                    ln.append(f"{Symbol.BOX_BOTTOM_LEFT}")
+            elif idx % 3 == 1:
+                ln.append(f"{Symbol.HORIZONTAL_LINE}")
+            else:
+                ln.append(" ")
+
+        inst = f" {instruction.symbol} "
+
+        if instruction.symbol.lower()[0] == "c":
+            inst = f" {instruction.symbol[-1].upper()} "
+            
+        if "Rotation" in instruction.name:
+            frac = Fraction(instruction.params[0]/math.pi).limit_denominator()
+            nu = frac.numerator
+            de = frac.denominator
+            arg_val = ""
+            if nu>100 or de>100:
+                arg_val = f"{instruction.params[0]:.4f}"
+            else:
+                if nu==1:
+                    nu = ""
+                arg_val = f"{nu}{Symbol.PI}/{de}"
+            inst = f" {instruction.symbol}({arg_val})"
+            
+            if instruction.params[0] == 0:
+                inst = f" {instruction.symbol}(0)"
+
+        iln = len(inst) 
+
+        for idx,ln in enumerate(lines):
+            qbit = idx//3
+            if qbit in target_qbits:
+                if idx % 3 == 0:
+                    ln.append(f"{Symbol.HORIZONTAL_LINE*(iln-2)}")
+                elif idx % 3 == 1:
+                    ln.append(inst)
+                elif idx % 3 == 2:
+                    ln.append(f"{Symbol.HORIZONTAL_LINE*(iln-2)}")
+            elif idx % 3 == 1:
+                ln.append(f"{Symbol.HORIZONTAL_LINE*iln}")
+            else:
+                ln.append(" "*iln)
+
+        for idx,ln in enumerate(lines):
+            qbit = idx//3
+            if qbit in target_qbits:
+                if idx % 3 == 0:
+                    ln.append(f"{Symbol.BOX_TOP_RIGHT}")
+                elif idx % 3 == 1:
+                    ln.append(f"{Symbol.RIGHT_T}")
+                elif idx % 3 == 2:
+                    ln.append(f"{Symbol.BOX_BOTTOM_RIGHT}")
+            elif idx % 3 == 1:
+                ln.append(f"{Symbol.HORIZONTAL_LINE}")
+            else:
+                ln.append(" ")
+
+
+        for bln,ln in zip(self.body_lines, lines):
+            bln.append("".join(ln))
+
+
+        for idx,ln in enumerate(self.top_lines):
+            if idx%3 == 1:
+                ln.append(f"{('m'+str(+self.m)).center((iln+2))}")
+                self.m += 1
+            else:
+                ln.append(" "*(iln+2))
+
+        return lines
+
+    def add_multi_qubit_gate(self, instruction: Instruction, idx: int):
+        lines = []
+        for idx,ln in enumerate(self.add_single_qubit_gate(instruction, idx)):
+            lines.append([c for c in ln])
+        # return
+
+        start = instruction.qubits[-1]
+        
+        
+        for target in instruction.qubits[:-1]:
+            n = start*3
+            # print(start,target)
+            if target < start:
+            
+                box_idx = len(lines[n])//2
+                tlst = [s for s in lines[n][box_idx]]
+                lines[n][box_idx] = ("" if len(lines[n][box_idx])==1 else Symbol.HORIZONTAL_LINE)+Symbol.TOP_T
+                n-=1
+                while n-1!= (target*3):
+                    # print(f"{lines[n][box_idx] =}")
+                    # if len(lines[n][box_idx]) != 1:
+                    
+                    slist = [s for s in lines[n][box_idx]]
+                    if slist[len(slist)//2] == Symbol.BOX:
+                        n-=1
+                        continue
+                    slist[len(slist)//2] = Symbol.VERTICAL_LINE
+                    lines[n][box_idx] = "".join(slist)
+
+                    n -=1
+                if len(lines[n][box_idx]) != 1:
+                    slist = [s for s in lines[n][box_idx]]
+                    slist[len(slist)//2] = Symbol.BOX
+                    lines[n][box_idx] = "".join(slist)
+                else:
+                    lines[n][box_idx] = Symbol.BOX
+
+            if target > start:
+                n = start*3 +2
+                box_idx = len(lines[n])//2 
+                lines[n][box_idx] = Symbol.BOTTOM_T
+                n+=1
+                while n-1!= (target*3):
+                    # print(f"{lines[n][box_idx] =}")
+                    # if len(lines[n][box_idx]) != 1:
+                    slist = [s for s in lines[n][box_idx]]
+                    if slist[len(slist)//2] == Symbol.BOX:
+                        n+=1
+                        continue
+                    slist[len(slist)//2] = Symbol.VERTICAL_LINE
+                    lines[n][box_idx] = "".join(slist)
+
+                    n +=1
+                if len(lines[n][box_idx]) != 1:
+                    slist = [s for s in lines[n][box_idx]]
+                    slist[len(slist)//2] = Symbol.BOX
+                    lines[n][box_idx] = "".join(slist)
+                else:
+                    lines[n][box_idx] = Symbol.BOX
+            
+        
+        for idx,ln in enumerate(self.body_lines):
+            ln[-1] = "".join(lines[idx])
+    
+
+    def add_measurement(self, instruction: Instruction, idx: int):
+        lines = []
+        for idx,ln in enumerate(self.add_single_qubit_gate(instruction, idx)):
+            lines.append([c for c in ln])
+        start = instruction.qubits[-1] *3 +2
+        
+        
+        flg = False
+        lidx=1
+        for idx,line in enumerate(lines):
+            # print(f"{line=}")
+            slist = [s for s in line[lidx]]
+            if idx==start:
+                slist[len(slist)//2] = Symbol.DOUBLE_TOP
+            if idx>(start):
+                slist[len(slist)//2] = Symbol.DOUBLE_VERTICAL_LINE
+            if idx==len(lines)-1:
+                slist[len(slist)//2] = str(instruction.params[-1])
+            line[lidx] = "".join(slist)
+            
+            
+
+        for idx,ln in enumerate(self.body_lines):
+            ln[-1] = "".join(lines[idx])
+
+    def add_instruction(self, instruction: Instruction, idx: int):
+        
+        if instruction.name == "Barrier":
+            return self.add_barrier(instruction, idx)
+        
+        if instruction.name == "Measurement":
+            return self.add_measurement(instruction, idx)
+        
+        if instruction.name == "SWAP-Gate":
+            return self.add_single_qubit_gate(instruction, idx,single=False)
+        
+        if instruction.qubits and len(instruction.qubits) == 1:
+            self.add_single_qubit_gate(instruction, idx)
+        else:
+            self.add_multi_qubit_gate(instruction, idx)
+
+
+
+
+def print_circuit(circuit: Circuit):
+    ctx = PrintCircuit(circuit)
+
+    ctx.add_left_padding()
+    ctx.add_space_padding()
+    ctx.add_space_padding()
+
+
+    for idx, instruction in enumerate(circuit.instructions):
+        ctx.add_space_padding()
+        ctx.add_instruction(instruction, idx)
+        ctx.add_space_padding()
+
+    for ln in ctx.lines:
+        print("".join(ln).replace(" ", " "))
+
 
 if __name__ == "__main__":
     def bell_state():
@@ -323,8 +597,10 @@ if __name__ == "__main__":
         circuit = Circuit(2)
         circuit.h(0)
         circuit.cx(0, 1)
+        circuit.print_circuit()
         results = circuit.execute(shots=13)
-        print(results)
+        
+        # print(results)
 
 
     bell_state()

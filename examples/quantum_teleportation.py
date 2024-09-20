@@ -11,7 +11,7 @@ def quantum_teleportation(state_to_teleport):
         circuit.h(0)
     elif state_to_teleport == 'p':
         circuit.rx(np.pi/3, 0)  # State with 80% probability of measuring |0>
-
+    
     # Create Bell pair between qubits 1 and 2
     circuit.h(1)
     circuit.cx(1, 2)
@@ -30,6 +30,7 @@ def quantum_teleportation(state_to_teleport):
 
     # # Measure the final state of qubit 2
     circuit.measure(2, 2)
+    circuit.print_circuit()
 
     # Execute the circuit
     results = circuit.execute(shots=420, visualize=True)

@@ -15,8 +15,9 @@ def bell_state():
     circuit = Circuit(2)
     circuit.h(0)
     circuit.cx(0, 1)
+    circuit.print_circuit()
     results = circuit.execute(shots=10,visualize=True)
-    print(results)
+    # print(results)
 
 
 bell_state()
