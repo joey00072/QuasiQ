@@ -65,7 +65,7 @@ pip install -e .
 - [x] [Quantum Teleportation](./examples/quantum_teleportation.py)
 - [x] [Superdense Coding](./examples/superdense_coding.py)
 - [x] [Deutsch Algorithm](./examples/deutsch_algorithm.py)
-- [ ] Deutsch Jozsa Algorithm
+- [x] [Deutsch Jozsa Algorithm](./examples/deutsch_jozsa.py)
 - [ ] Quantum Fourier Transform
 - [ ] Grover's Algorithm
 - [ ] Shor's Algorithm

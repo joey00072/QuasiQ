@@ -46,7 +46,7 @@ def superdense_coding(message:str):
 
     circuit.cx(0, 1)
 
-    circuit = alice(circuit,message)
+    circuit = alice(circuit,message) 
 
     circuit = bob_decode(circuit)
    
