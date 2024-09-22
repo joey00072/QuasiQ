@@ -2,58 +2,51 @@
 
 QuasiQ is a simple quantum computer simulator
 
-```css
-                                                                                
-       ┌────────┐                       ┌───┐  ┌───┐                             
-q_0:───┤ RX(π/3)├──────────────────■────┤ H ├──┤ M ├──────────────────■──────────
-       └────────┘                  │    └───┘  └─╥─┘                  │          
-                   ┌───┐         ┌─┴─┐           ║    ┌───┐           │          
-q_1:───────────────┤ H ├────■────┤ X ├───────────║────┤ M ├────■──────│──────────
-                   └───┘    │    └───┘           ║    └─╥─┘    │      │          
-                          ┌─┴─┐                  ║      ║    ┌─┴─┐  ┌─┴─┐  ┌───┐ 
-q_2:──────────────────────┤ X ├──────────────────║──────║────┤ X ├──┤ Z ├──┤ M ├─
-                          └───┘                  ║      ║    └───┘  └───┘  └─╥─┘ 
-                                                 0      1                    2   
-```
+![Quantum Teleportation Sceenshot](./assets/qtee.png)
 
-Quantum Teleportation Example
+Bell State Example
 
 ```python
-
 from quasiq import Circuit
-import numpy as np
 
 
-circuit = Circuit(3,3) # init in zero states 
 
-circuit.rx(np.pi/3, 0)  # State with 75% probability of measuring |0>
-
-# Create Bell pair between qubits 1 and 2
-circuit.h(1)
-circuit.cx(1, 2)
-
-# # Perform Bell state measurement on qubits 0 and 1
-circuit.cx(0, 1)
+# simplest quantum entanglement
+# both qbits are maximally entangled
+# so you wil either get |00⟩ or |11⟩ (but not |01⟩ or |10⟩)
+ 
+circuit = Circuit(2)
 circuit.h(0)
-
-# # Measure qubits 0 and 1
-circuit.measure(0, 0)
-circuit.measure(1, 1)
-
-# # Apply corrections on qubit 2 based on measurement results
-circuit.cx(1, 2)
-circuit.cz(0, 2)
-
-# # Measure the final state of qubit 2
-circuit.measure(2, 2)
+circuit.cx(0, 1)
 circuit.print_circuit()
 
-# Execute the circuit
-results = circuit.execute(shots=420)
+results = circuit.execute(shots=10,visualize=True)
 
-ones = sum([r[2] for r in results])
-print(f"Probability of measuring |0⟩: {1 - ones / len(results):.2f}")
-print(f"Probability of measuring |1⟩: {ones / len(results):.2f}")
+for result in results:
+    print(result)
+
+```
+Output:
+```rust
+                   
+        m1     m2  
+                   
+       ┌───┐        
+q_0:───┤ H ├────■───
+       └───┘    │   
+              ┌─┴─┐ 
+q_1:──────────┤ X ├─
+              └───┘ 
+                    
+Measuring qubit 0
+Measuring qubit 1
+ 1  |11⟩  ■■■■■■■■■■□□□□□□□□□□  50.0% chance
+ 2  |00⟩  ■■■■■■■■■■□□□□□□□□□□  50.0% chance
+
+[1 1]
+[0 0]
+[1 1]
+[0 0]
 
 ```
 
@@ -66,6 +59,17 @@ cd quasiq
 pip install -e .
 ```
 
+## Algorithms
+
+- [x] [Bell States](./examples/bell_states.py)
+- [x] [Quantum Teleportation](./examples/quantum_teleportation.py)
+- [x] [Superdense Coding](./examples/superdense_coding.py)
+- [x] [Deutsch Algorithm](./examples/deutsch_algorithm.py)
+- [ ] Deutsch Jozsa Algorithm
+- [ ] Quantum Fourier Transform
+- [ ] Grover's Algorithm
+- [ ] Shor's Algorithm
+
 
 ## Features
 
@@ -74,6 +78,7 @@ pip install -e .
 - Controlled gates (e.g., CNOT)
 - Qubit measurement
 - Density matrix representation
+
 
 ## Checklist
 
