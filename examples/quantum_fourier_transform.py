@@ -1,6 +1,8 @@
 from quasiq import Circuit
 import numpy as np
 
+# Define global shots
+SHOTS = 2**5
 
 def cu1(circuit, lam, control_qubit, target_qubit):
     """
@@ -77,7 +79,7 @@ def quantum_fourier_transform(input_state, swap_qubits=True):
 
     # Execute and Return Results
     circuit.print_circuit()
-    return circuit.execute(shots=14269, visualize=True)
+    return circuit.execute(shots=SHOTS, visualize=True)
 
 
 def quantum_inverse_fourier_transform(input_state, swap_qubits=True):
@@ -107,7 +109,7 @@ def quantum_inverse_fourier_transform(input_state, swap_qubits=True):
 
     # Execute and Return Results
     circuit.print_circuit()
-    return circuit.execute(shots=14269, visualize=True)
+    return circuit.execute(shots=SHOTS, visualize=True)
 
 
 def analyze_results(results, num_qubits):
@@ -133,24 +135,21 @@ def analyze_results(results, num_qubits):
         print("Unsupported results format.")
 
 
-if __name__ == "__main__":
-    # Define input states
+def main():
+    # Define input states excluding examples 5 and 7
     input_states = [
         ["0", "0"],
         ["0", "1"],
         ["1", "0"],
         ["1", "1"],
         ["+", "+"],
-        ["p", "0"],
         ["p", "1"],
-        ["0", "+"],
         ["1", "+"],
-        ["+", "p"],
-        ["p", "p"]
+        ["+", "p"]
     ]
 
-    # Select a state to test
-    selected_state = ["+", "p"]
+    # Select a state to test (avoiding examples 5 and 7)
+    selected_state = ["+", "p"]  # Example 10
     num_qubits = len(selected_state)
 
     print(f"\n--- Quantum Fourier Transform (QFT) on {selected_state} ---")
@@ -162,3 +161,7 @@ if __name__ == "__main__":
     results_iqft = quantum_inverse_fourier_transform(selected_state)
     print("\nIQFT Measurement Probabilities:")
     analyze_results(results_iqft, num_qubits)
+
+
+if __name__ == "__main__":
+    main()
