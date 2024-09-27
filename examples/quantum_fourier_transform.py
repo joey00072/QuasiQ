@@ -2,7 +2,7 @@ from quasiq import Circuit
 import numpy as np
 
 # Define global shots
-SHOTS = 2**5
+SHOTS = 2**12
 
 def cu1(circuit, lam, control_qubit, target_qubit):
     """

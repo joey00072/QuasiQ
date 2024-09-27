@@ -118,8 +118,8 @@ class DensityMatrix:
         P1_full = tensor_product(operators_P1)
 
         # Calculate probabilities
-        P_0 = np.trace(P0_full @ self.state).real
-        P_1 = np.trace(P1_full @ self.state).real
+        P_0 = max(np.trace(P0_full @ self.state).real,0)
+        P_1 = max(np.trace(P1_full @ self.state).real,0)
 
         # Normalize probabilities to avoid numerical issues
         total_prob = P_0 + P_1

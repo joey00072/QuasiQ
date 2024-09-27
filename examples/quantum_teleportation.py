@@ -33,7 +33,7 @@ def quantum_teleportation(state_to_teleport):
     circuit.print_circuit()
 
     # Execute the circuit
-    results = circuit.execute(shots=1420, visualize=True)
+    results = circuit.execute(shots=3420, visualize=False)
     
     return results
 
