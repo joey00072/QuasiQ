@@ -90,8 +90,8 @@ pip install -e .
 - [x] Implement additional quantum gates (Y, Z, S, T, etc.)
 - [x] Create quantum circuit class
 - [x] quantum teleportation example
-- [ ] superdense coding example
-- [ ] Add visualization tools for quantum states
+- [x] superdense coding example
+- [x] Add visualization tools for quantum states
 - [ ] impliment basic algorithms (ghz, teleportation, etc.)
 - [ ] Noise simulation
 - [ ] QASM (OpenQASM) support
