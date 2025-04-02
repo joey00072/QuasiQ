@@ -66,7 +66,7 @@ pip install -e .
 - [x] [Superdense Coding](./examples/superdense_coding.py)
 - [x] [Deutsch Algorithm](./examples/deutsch_algorithm.py)
 - [x] [Deutsch Jozsa Algorithm](./examples/deutsch_jozsa.py)
-- [ ] Quantum Fourier Transform
+- [x] [Quantum Fourier Transform](./examples/quantum_fourier_transform.py)
 - [ ] Grover's Algorithm
 - [ ] Shor's Algorithm
 
@@ -92,7 +92,7 @@ pip install -e .
 - [x] quantum teleportation example
 - [x] superdense coding example
 - [x] Add visualization tools for quantum states
-- [ ] impliment basic algorithms (ghz, teleportation, etc.)
+- [x] impliment basic algorithms (ghz, teleportation, etc.)
 - [ ] Noise simulation
 - [ ] QASM (OpenQASM) support
 - [ ] tests :?
