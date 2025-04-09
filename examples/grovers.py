@@ -53,7 +53,7 @@ def grover_search(target: str):
         circuit.cz(0, 1)  # phase‑flip |00⟩
         for q in range(n):
             circuit.x(q)
-            circuit.x(q)
+            circuit.h(q)
 
     # ── Measurement ──
     for q in range(n):
