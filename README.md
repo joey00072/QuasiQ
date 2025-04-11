@@ -67,7 +67,7 @@ pip install -e .
 - [x] [Deutsch Algorithm](./examples/deutsch_algorithm.py)
 - [x] [Deutsch Jozsa Algorithm](./examples/deutsch_jozsa.py)
 - [x] [Quantum Fourier Transform](./examples/quantum_fourier_transform.py)
-- [ ] Grover's Algorithm
+- [x] [Grover's Algorithm](./examples/grovers.py)
 - [ ] Shor's Algorithm
 
 
